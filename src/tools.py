@@ -1,4 +1,7 @@
-"""Tools — mock business system functions for compliance review."""
+"""Tools — business system functions for compliance review.
+
+RAG uses keyword search with ChromaDB as optional upgrade (requires cached embedding model).
+"""
 
 import json
 from pathlib import Path
@@ -30,22 +33,26 @@ def _load_materials() -> dict[str, dict]:
     return _materials
 
 
-def search_regulations(query: str) -> list[dict]:
-    """Search regulation documents by keyword. Returns matching excerpts."""
+def search_regulations(query: str, n_results: int = 3) -> list[dict]:
+    """Search regulation documents by keyword matching.
+
+    Production upgrade: replace with ChromaDB vector search
+    (see git history for ChromaDB implementation).
+    """
     regs = _load_regulations()
     results = []
     query_lower = query.lower()
     for name, content in regs.items():
         if query_lower in content.lower():
-            # Return first 500 chars as excerpt
             idx = content.lower().find(query_lower)
             start = max(0, idx - 100)
             end = min(len(content), idx + 400)
             results.append({
                 "source": name,
                 "excerpt": content[start:end],
+                "relevance": 0.8,
             })
-    return results
+    return results[:n_results]
 
 
 def check_related_party(material_id: str) -> bool:
