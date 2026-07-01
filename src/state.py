@@ -52,6 +52,14 @@ class ComplianceReport(BaseModel):
     regulations_checked: list[str] = Field(default_factory=list)
 
 
+class ComplianceAnalysis(BaseModel):
+    """LLM structured output for ReAct analysis loop."""
+    risk_factors: list[str]
+    overall_assessment: str
+    confidence: float
+    regulations_cited: list[str]
+
+
 class AuditEntry(BaseModel):
     timestamp: datetime = Field(default_factory=datetime.now)
     node: str
@@ -84,6 +92,8 @@ class ComplianceState(BaseModel):
     # Results
     risk_score: RiskScore | None = None
     report: ComplianceReport | None = None
+    llm_risk_factors: list[str] = Field(default_factory=list)
+    llm_regulations: list[str] = Field(default_factory=list)
 
     # Flow control
     current_step: str = "pending"

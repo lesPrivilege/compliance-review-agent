@@ -35,6 +35,19 @@ def score_node(state: ComplianceState) -> dict:
         risk_factors.append("大额交易")
     if material.条款标记.get("不可逆"):
         risk_factors.append("不可撤销条款")
+    if "反垄断" in material.内容摘要 and material.金额 > 3000000:
+        risk_factors.append("达到反垄断申报阈值")
+
+    # Merge LLM-discovered risk factors (complementary, not replacement)
+    for factor in state.llm_risk_factors:
+        if factor not in risk_factors:
+            risk_factors.append(factor)
+
+    # Merge LLM-discovered regulations
+    all_regulations = [d.source for d in state.retrieved_docs]
+    for reg in state.llm_regulations:
+        if reg not in all_regulations and reg != "未找到直接依据":
+            all_regulations.append(reg)
 
     # Determine level
     if len(risk_factors) >= 2 or any("受监管" in r for r in risk_factors):
@@ -49,7 +62,7 @@ def score_node(state: ComplianceState) -> dict:
         summary=f"材料 {material.id} 审查完成：{level.value} 风险",
         risk_factors=risk_factors,
         recommendations=["建议人工审查"] if level != RiskLevel.LOW else ["可自动通过"],
-        regulations_checked=[d.source for d in state.retrieved_docs],
+        regulations_checked=all_regulations,
     )
 
     duration = int((time.time() - start) * 1000)

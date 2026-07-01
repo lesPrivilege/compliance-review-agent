@@ -6,6 +6,8 @@ RAG uses keyword search with ChromaDB as optional upgrade (requires cached embed
 import json
 from pathlib import Path
 
+from langchain_core.tools import tool
+
 DATA_DIR = Path(__file__).parent.parent / "data"
 
 _regulations: dict[str, str] | None = None
@@ -53,6 +55,18 @@ def search_regulations(query: str, n_results: int = 3) -> list[dict]:
                 "relevance": 0.8,
             })
     return results[:n_results]
+
+
+@tool
+def search_regulations_tool(query: str) -> str:
+    """Search compliance regulations by keyword. Returns matching regulation excerpts."""
+    results = search_regulations(query)
+    if not results:
+        return "未找到相关法规。"
+    parts = []
+    for r in results:
+        parts.append(f"[{r['source']}]\n{r['excerpt']}")
+    return "\n\n---\n\n".join(parts)
 
 
 def check_related_party(material_id: str) -> bool:
