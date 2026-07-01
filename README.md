@@ -10,6 +10,8 @@
 
 **诚实口径**：场景设计参考多行业合规审查的通用模式，数据全部虚构。
 
+> **配套项目**：本项目是三个项目之一——`contract-approval-agent`（合同审批路由，规则+HITL）是结构化决策的互补对照，`agent-quality-workbench`（PM 侧评估工具）提供立项评分和跨 agent 质量仪表盘。
+
 ## 与 contract-approval-agent 的对比
 
 | 维度 | contract-approval-agent | compliance-review-agent |
@@ -116,7 +118,7 @@ uv sync
 
 uv run python main.py --list                    # 列出所有材料
 uv run python main.py --material M001           # 正常审查
-uv run pytest tests/ -v                         # 40 passed
+uv run pytest tests/ -v                         # 40 passed, 8 skipped
 ```
 
 ## 设计决策
@@ -171,7 +173,7 @@ compliance-review-agent/
 │       └── report_gen.py  ← 审查报告生成
 ├── data/
 │   ├── regulations/       ← 7 个法规文件（按板块组织）
-│   └── materials.jsonl    ← 10 个材料样本
+│   └── materials.jsonl    ← 13 个材料样本
 └── tests/
     └── test_trajectories.py  ← 48 个 trajectory 测试（40 deterministic + 8 LLM）
 ```
