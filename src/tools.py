@@ -36,10 +36,7 @@ def _load_materials() -> dict[str, dict]:
 
 
 def search_regulations(query: str, n_results: int = 3) -> list[dict]:
-    """Search regulation documents by keyword matching.
-
-    Production upgrade: add vector/BM25 retrieval only when corpus scale or weak structure requires it.
-    """
+    """Search regulation documents by keyword matching."""
     regs = _load_regulations()
     results = []
     query_lower = query.lower()
