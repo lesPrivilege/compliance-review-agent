@@ -108,3 +108,6 @@ class ComplianceState(BaseModel):
 
     # Audit
     audit_log: list[AuditEntry] = Field(default_factory=list)
+
+    # Trace (step-level, for workbench trace metrics)
+    trace_steps: list[dict] = Field(default_factory=list)

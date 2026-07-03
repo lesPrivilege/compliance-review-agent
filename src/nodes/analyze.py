@@ -35,6 +35,8 @@ def _deterministic_analyze(state: ComplianceState) -> dict:
     docs = state.retrieved_docs
 
     steps = []
+    trace_steps = []
+    step_idx = 0
 
     risk_factors = []
     if material.关联方标记:
@@ -91,6 +93,16 @@ def _deterministic_analyze(state: ComplianceState) -> dict:
 
     duration = max(1, int((time.perf_counter() - start) * 1000))
 
+    # Emit trace: deterministic path is a single reason step
+    trace_steps.append({
+        "case_id": material.id,
+        "step_idx": step_idx,
+        "action": "reason",
+        "tool_name": "",
+        "args_ok": None,
+        "duration_ms": duration,
+    })
+
     audit = AuditEntry(
         node="analyze",
         action="multi_step_analysis",
@@ -107,6 +119,7 @@ def _deterministic_analyze(state: ComplianceState) -> dict:
         "audit_log": state.audit_log + [audit],
         "llm_risk_factors": [],
         "llm_regulations": [],
+        "trace_steps": state.trace_steps + trace_steps,
     }
 
 
@@ -137,6 +150,8 @@ def _llm_react_analyze(state: ComplianceState) -> dict:
     all_regulations = [d.source for d in docs]
     total_tokens_in = 0
     total_tokens_out = 0
+    trace_steps = []
+    step_idx = 0
 
     messages = [
         {"role": "system", "content": (
@@ -153,12 +168,24 @@ def _llm_react_analyze(state: ComplianceState) -> dict:
     ]
 
     for iteration in range(_MAX_ITERATIONS):
+        loop_start = time.perf_counter()
         response = llm.invoke(messages)
         messages.append(response)
 
         usage = _usage_from_response(response)
         total_tokens_in += usage["tokens_in"] or 0
         total_tokens_out += usage["tokens_out"] or 0
+
+        llm_dur = max(1, int((time.perf_counter() - loop_start) * 1000))
+        trace_steps.append({
+            "case_id": material.id,
+            "step_idx": step_idx,
+            "action": "reason",
+            "tool_name": "",
+            "args_ok": None,
+            "duration_ms": llm_dur,
+        })
+        step_idx += 1
 
         steps.append(AnalysisStep(
             thought=f"ReAct 第{iteration + 1}轮: LLM 分析",
@@ -170,7 +197,9 @@ def _llm_react_analyze(state: ComplianceState) -> dict:
             break
 
         for tc in response.tool_calls:
+            tc_start = time.perf_counter()
             tool_result = search_regulations_tool.invoke(tc["args"])
+            tc_dur = max(1, int((time.perf_counter() - tc_start) * 1000))
             messages.append({"role": "tool", "content": tool_result, "tool_call_id": tc["id"]})
             query = tc["args"].get("query", "")
             steps.append(AnalysisStep(
@@ -178,6 +207,15 @@ def _llm_react_analyze(state: ComplianceState) -> dict:
                 action="search_regulations",
                 observation=tool_result[:200],
             ))
+            trace_steps.append({
+                "case_id": material.id,
+                "step_idx": step_idx,
+                "action": "tool_call",
+                "tool_name": "search_regulations",
+                "args_ok": bool(query),
+                "duration_ms": tc_dur,
+            })
+            step_idx += 1
 
     structured_llm = get_llm().with_structured_output(ComplianceAnalysis)
     final_messages = messages + [
@@ -220,6 +258,7 @@ def _llm_react_analyze(state: ComplianceState) -> dict:
         "audit_log": state.audit_log + [audit],
         "llm_risk_factors": analysis.risk_factors,
         "llm_regulations": analysis.regulations_cited,
+        "trace_steps": state.trace_steps + trace_steps,
     }
 
 

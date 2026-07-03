@@ -7,6 +7,7 @@ from pathlib import Path
 from src.state import AuditEntry, ComplianceReport, ComplianceState, ReviewStatus
 
 AUDIT_LOG_PATH = Path(__file__).resolve().parent.parent.parent / "data" / "audit_log.jsonl"
+TRACE_LOG_PATH = Path(__file__).resolve().parent.parent.parent / "data" / "trace_log.jsonl"
 
 
 def report_gen_node(state: ComplianceState) -> dict:
@@ -36,6 +37,12 @@ def report_gen_node(state: ComplianceState) -> dict:
             record["timestamp"] = record["timestamp"].isoformat()
             record["material_id"] = state.material.id
             f.write(json.dumps(record, ensure_ascii=False) + "\n")
+
+    # Write trace log
+    if state.trace_steps:
+        with open(TRACE_LOG_PATH, "a", encoding="utf-8") as f:
+            for step in state.trace_steps:
+                f.write(json.dumps(step, ensure_ascii=False) + "\n")
 
     duration = max(1, int((time.perf_counter() - start) * 1000))
 

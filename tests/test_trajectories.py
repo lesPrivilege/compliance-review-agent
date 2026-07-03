@@ -334,3 +334,22 @@ class TestLLMNoMatch:
         score = result["risk_score"]
         assert score is not None
         assert score.level == RiskLevel.LOW
+
+
+class TestTraceOutput:
+    """Verify trace_steps are populated and well-formed."""
+
+    def test_trace_steps_non_empty(self):
+        result = _run("M001")
+        assert len(result["trace_steps"]) >= 1
+
+    def test_trace_step_idx_sequential(self):
+        result = _run("M001")
+        indices = [s["step_idx"] for s in result["trace_steps"]]
+        assert indices == list(range(len(indices)))
+
+    def test_trace_action_in_enum(self):
+        result = _run("M001")
+        valid_actions = {"reason", "tool_call", "route"}
+        for step in result["trace_steps"]:
+            assert step["action"] in valid_actions
