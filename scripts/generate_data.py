@@ -1,3 +1,5 @@
+"""初版脚手架：当前数据已手动扩展至 13 个材料和 7 篇法规，脚本不再完整反映现状。"""
+
 """Generate synthetic compliance data for demo.
 
 All data is FICTIONAL. Based on general compliance patterns,

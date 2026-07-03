@@ -1,6 +1,6 @@
 """Tools — business system functions for compliance review.
 
-RAG uses keyword search with ChromaDB as optional upgrade (requires cached embedding model).
+Current retrieval is keyword-based because the demo regulation corpus is small and structured.
 """
 
 import json
@@ -38,8 +38,7 @@ def _load_materials() -> dict[str, dict]:
 def search_regulations(query: str, n_results: int = 3) -> list[dict]:
     """Search regulation documents by keyword matching.
 
-    Production upgrade: replace with ChromaDB vector search
-    (see git history for ChromaDB implementation).
+    Production upgrade: add vector/BM25 retrieval only when corpus scale or weak structure requires it.
     """
     regs = _load_regulations()
     results = []
