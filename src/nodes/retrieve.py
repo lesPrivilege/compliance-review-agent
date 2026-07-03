@@ -8,7 +8,7 @@ from src.tools import search_regulations
 
 def retrieve_node(state: ComplianceState) -> dict:
     """Search regulations relevant to this material."""
-    start = time.time()
+    start = time.perf_counter()
     material = state.material
 
     # Build search queries from material
@@ -34,7 +34,7 @@ def retrieve_node(state: ComplianceState) -> dict:
                     relevance=1.0,
                 ))
 
-    duration = int((time.time() - start) * 1000)
+    duration = max(1, int((time.perf_counter() - start) * 1000))
 
     audit = AuditEntry(
         node="retrieve",

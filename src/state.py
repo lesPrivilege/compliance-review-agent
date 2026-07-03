@@ -68,6 +68,8 @@ class AuditEntry(BaseModel):
     output_summary: str
     decision: str
     duration_ms: int = 0
+    tokens_in: int | None = None
+    tokens_out: int | None = None
 
 
 class ReviewMaterial(BaseModel):

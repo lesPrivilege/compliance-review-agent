@@ -7,7 +7,7 @@ from src.state import AuditEntry, ComplianceState, ReviewStatus
 
 def ingest_node(state: ComplianceState) -> dict:
     """Parse material, extract key information for downstream analysis."""
-    start = time.time()
+    start = time.perf_counter()
     material = state.material
 
     # Extract key clauses from material summary
@@ -32,7 +32,7 @@ def ingest_node(state: ComplianceState) -> dict:
     search_queries = [material.材料类型]
     search_queries.extend(clauses)
 
-    duration = int((time.time() - start) * 1000)
+    duration = max(1, int((time.perf_counter() - start) * 1000))
 
     audit = AuditEntry(
         node="ingest",

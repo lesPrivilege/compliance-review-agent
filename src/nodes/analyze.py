@@ -16,9 +16,21 @@ _MAX_ITERATIONS = 2
 _has_api_key = bool(os.getenv("OPENAI_API_KEY"))
 
 
+def _usage_from_response(response) -> dict:
+    """Extract token counts from LangChain response metadata."""
+    usage = getattr(response, "usage_metadata", None) or {}
+    if not usage:
+        response_metadata = getattr(response, "response_metadata", {}) or {}
+        usage = response_metadata.get("token_usage", {}) or {}
+    return {
+        "tokens_in": usage.get("input_tokens") or usage.get("prompt_tokens"),
+        "tokens_out": usage.get("output_tokens") or usage.get("completion_tokens"),
+    }
+
+
 def _deterministic_analyze(state: ComplianceState) -> dict:
     """Original hardcoded analysis — used when no API key is available."""
-    start = time.time()
+    start = time.perf_counter()
     material = state.material
     docs = state.retrieved_docs
 
@@ -77,7 +89,7 @@ def _deterministic_analyze(state: ComplianceState) -> dict:
         observation=assessment,
     ))
 
-    duration = int((time.time() - start) * 1000)
+    duration = max(1, int((time.perf_counter() - start) * 1000))
 
     audit = AuditEntry(
         node="analyze",
@@ -102,7 +114,7 @@ def _llm_react_analyze(state: ComplianceState) -> dict:
     """Real LLM ReAct loop — used when API key is available."""
     from src.config import get_llm
 
-    start = time.time()
+    start = time.perf_counter()
     material = state.material
     docs = state.retrieved_docs
 
@@ -123,6 +135,8 @@ def _llm_react_analyze(state: ComplianceState) -> dict:
     llm = get_llm().bind_tools([search_regulations_tool])
     steps = []
     all_regulations = [d.source for d in docs]
+    total_tokens_in = 0
+    total_tokens_out = 0
 
     messages = [
         {"role": "system", "content": (
@@ -141,6 +155,10 @@ def _llm_react_analyze(state: ComplianceState) -> dict:
     for iteration in range(_MAX_ITERATIONS):
         response = llm.invoke(messages)
         messages.append(response)
+
+        usage = _usage_from_response(response)
+        total_tokens_in += usage["tokens_in"] or 0
+        total_tokens_out += usage["tokens_out"] or 0
 
         steps.append(AnalysisStep(
             thought=f"ReAct 第{iteration + 1}轮: LLM 分析",
@@ -182,7 +200,7 @@ def _llm_react_analyze(state: ComplianceState) -> dict:
         observation=f"置信度={analysis.confidence:.2f}, 风险因素={len(analysis.risk_factors)}",
     ))
 
-    duration = int((time.time() - start) * 1000)
+    duration = max(1, int((time.perf_counter() - start) * 1000))
 
     audit = AuditEntry(
         node="analyze",
@@ -191,6 +209,8 @@ def _llm_react_analyze(state: ComplianceState) -> dict:
         output_summary=analysis.overall_assessment[:80],
         decision="analyzed",
         duration_ms=duration,
+        tokens_in=total_tokens_in or None,
+        tokens_out=total_tokens_out or None,
     )
 
     return {

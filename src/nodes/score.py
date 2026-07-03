@@ -15,7 +15,7 @@ from src.tools import check_data_isolation, check_related_party
 
 def score_node(state: ComplianceState) -> dict:
     """Score compliance risk based on analysis results."""
-    start = time.time()
+    start = time.perf_counter()
     material = state.material
     steps = state.analysis_steps
 
@@ -65,7 +65,7 @@ def score_node(state: ComplianceState) -> dict:
         regulations_checked=all_regulations,
     )
 
-    duration = int((time.time() - start) * 1000)
+    duration = max(1, int((time.perf_counter() - start) * 1000))
 
     audit = AuditEntry(
         node="score",

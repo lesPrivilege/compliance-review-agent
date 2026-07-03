@@ -1,4 +1,4 @@
-"""Graph assembly — LangGraph StateGraph with conditional edges."""
+"""Graph assembly — LangGraph StateGraph."""
 
 from langgraph.graph import END, START, StateGraph
 
@@ -8,16 +8,7 @@ from src.nodes.ingest import ingest_node
 from src.nodes.report_gen import report_gen_node
 from src.nodes.retrieve import retrieve_node
 from src.nodes.score import score_node
-from src.state import ComplianceState, ReviewStatus
-
-
-def _after_score(state: ComplianceState) -> str:
-    """After scoring, check if isolation guardrail blocks, else go to HITL."""
-    material = state.material
-    # Hard block: cross-segment data sharing with regulated business
-    if material.涉及数据共享 and material.涉及受监管业务:
-        return "hitl"  # will be blocked in HITL
-    return "hitl"
+from src.state import ComplianceState
 
 
 def build_graph() -> StateGraph:
@@ -37,7 +28,7 @@ def build_graph() -> StateGraph:
     graph.add_edge("ingest", "retrieve")
     graph.add_edge("retrieve", "analyze")
     graph.add_edge("analyze", "score")
-    graph.add_conditional_edges("score", _after_score, {"hitl": "hitl"})
+    graph.add_edge("score", "hitl")
     graph.add_edge("hitl", "report_gen")
     graph.add_edge("report_gen", END)
 

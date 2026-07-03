@@ -11,7 +11,7 @@ AUDIT_LOG_PATH = Path(__file__).resolve().parent.parent.parent / "data" / "audit
 
 def report_gen_node(state: ComplianceState) -> dict:
     """Generate final compliance report and write audit log."""
-    start = time.time()
+    start = time.perf_counter()
     material = state.material
     risk_score = state.risk_score
     analysis = state.analysis_steps
@@ -37,7 +37,7 @@ def report_gen_node(state: ComplianceState) -> dict:
             record["material_id"] = state.material.id
             f.write(json.dumps(record, ensure_ascii=False) + "\n")
 
-    duration = int((time.time() - start) * 1000)
+    duration = max(1, int((time.perf_counter() - start) * 1000))
 
     audit = AuditEntry(
         node="report_gen",

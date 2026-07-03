@@ -9,7 +9,7 @@ from src.state import AuditEntry, ComplianceState, RiskLevel, ReviewStatus
 
 def hitl_node(state: ComplianceState) -> dict:
     """Check if HITL is needed; if so, pause and wait for human decision."""
-    start = time.time()
+    start = time.perf_counter()
     material = state.material
     risk_score = state.risk_score
 
@@ -39,7 +39,7 @@ def hitl_node(state: ComplianceState) -> dict:
 
         decision = interrupt(payload)
 
-        duration = int((time.time() - start) * 1000)
+        duration = max(1, int((time.perf_counter() - start) * 1000))
 
         audit = AuditEntry(
             node="hitl",
@@ -67,7 +67,7 @@ def hitl_node(state: ComplianceState) -> dict:
             }
     else:
         # Low risk — auto approve
-        duration = int((time.time() - start) * 1000)
+        duration = max(1, int((time.perf_counter() - start) * 1000))
 
         audit = AuditEntry(
             node="hitl",
