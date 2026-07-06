@@ -14,6 +14,8 @@
 
 > **配套项目**：本项目是三个项目之一——`contract-approval-agent`（合同审批路由，规则+HITL）是结构化决策的互补对照，`agent-quality-workbench`（PM 侧评估工具）提供立项评分和跨 agent 质量仪表盘。
 
+> **在线预览**：[GitHub Pages](https://lesprivilege.github.io/compliance-review-agent/)（verification log）
+
 ## 与 contract-approval-agent 的对比
 
 | 维度 | contract-approval-agent | compliance-review-agent |
